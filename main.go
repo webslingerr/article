@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Author struct {
   Id uint8
@@ -53,15 +56,34 @@ func (i *InMemoryDB) DeleteAuthor(author Author) {
   }
 }
 
-func (i *InMemoryDB) GetByIdAuthor(Id uint8) Author {
+func (i *InMemoryDB) GetByIdAuthor(Id uint8) {
   for _, val := range i.authors {
     if val.Id == Id {
       fmt.Println("SUCCESS: Found author")
-      return val
+      fmt.Printf("\tAuthor id: %d\n", val.Id)
+      fmt.Printf("\tAuthor age: %d\n", val.Age)
+      fmt.Printf("\tAuthor name: %v\n", val.Name)
+      return
     }
   }
   fmt.Println("WARNING: There is no author with this id")
-  return Author{}
+}
+
+func (i *InMemoryDB) GetAllAuthor(limit, offset int, s string) []Author {
+  authors := []Author{}
+  if limit+offset>len(i.authors) {
+    return authors
+  }
+  for _, val := range i.authors[offset:] {
+    if limit == 0 {
+      break
+    }
+    if strings.HasPrefix(strings.ToLower(val.Name), s) {
+      authors = append(authors, val)
+      limit--
+    }
+  }
+  return authors
 }
 
 func (i *InMemoryDB) CreateArticle(article Article) {
@@ -95,20 +117,57 @@ func (i *InMemoryDB) DeleteArticle(article Article) {
       return
     }
   }
-  fmt.Println("WARNING: There is no article with this id")
+  fmt.Println("There is no article with this id")
 }
 
-func (i *InMemoryDB) GetByIdArticle(id uint8) Article {
+func (i *InMemoryDB) GetByIdArticle(id uint8) {
   for _, val := range i.articles {
     if val.Id == id {
       fmt.Println("SUCCESS: Got article with this id")
-      return val
+      fmt.Println("Id:", val.Id)
+      fmt.Println("Title:", val.Title)
+      fmt.Println("Description:", val.Desc)
+      i.GetByIdAuthor(val.Author_id)
+      return
     }
   }
   fmt.Println("WARNING: There is no article with this id")
-  return Article{}
+}
+
+func (i *InMemoryDB) GetAllArticle(limit, offset int, search string, author_id uint8) []Article {
+  articles := []Article{}
+  if limit+offset>len(i.articles) {
+    return articles
+  }
+  for _, val := range i.articles[offset:] {
+    if limit == 0 {
+      break
+    } 
+    if val.Author_id == author_id {
+      if strings.HasPrefix(strings.ToLower(val.Title), search) {
+        articles = append(articles, val)
+        limit--
+      }
+    }
+  }
+  return articles
 }
 
 func main() {
-  
+  db := InMemoryDB{}
+  author1 := Author {
+    Id: 1,
+    Name: "Mark Twen",
+    Age: 60,
+  }
+  article := Article {
+    Id: 1,
+    Title: "Title",
+    Desc: "This is the desctiprion",
+    Author_id: 1,
+  }
+
+  db.CreateAuthor(author1)
+  db.CreateArticle(article)
+  db.GetByIdArticle(article.Id)
 }
